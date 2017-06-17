@@ -10,6 +10,24 @@ struct AVLNodeArena {
     root: Option<usize>
 }
 
+fn tree_depth_from_node(index: usize, arena: &AVLNodeArena, depth: usize) -> usize {
+    let node = unwrap_to_node(Some(index), arena).unwrap();
+    let left_depth = match node.left {
+        Some(left) => tree_depth_from_node(left, arena, depth + 1),
+        None => depth
+    };
+    let right_depth = match node.right {
+        Some(right) => tree_depth_from_node(right, arena, depth + 1),
+        None => depth
+    };
+    return std::cmp::max(left_depth, right_depth);
+}
+
+fn maybe_get_parent_of(index: usize, arena: &AVLNodeArena) -> Option<usize> {
+    let node = unwrap_to_node(Some(index), arena).unwrap();
+    return node.parent;
+}
+
 impl AVLNodeArena {
     fn new() -> AVLNodeArena {
         AVLNodeArena {
@@ -73,7 +91,104 @@ impl AVLNodeArena {
     }
 
     pub fn add(&mut self, value: u32) -> usize {
-        return self.bintree_append(value);
+        let mut index = self.bintree_append(value);
+
+        /* Now that we've added the node and have its index, go up the tree
+         * to its parent and check the heights of each left and right subtree */
+        while let Some(parent_index) = maybe_get_parent_of(index, &self) {
+            index = parent_index;
+            let left_tree_depth = match self.nodes[index].left {
+                Some(left) => tree_depth_from_node(left, &self, 0),
+                None => 0
+            };
+            let right_tree_depth = match self.nodes[index].right {
+                Some(right) => tree_depth_from_node(right, &self, 0),
+                None => 0
+            };
+
+            if std::cmp::max(left_tree_depth, right_tree_depth) -
+               std::cmp::min(left_tree_depth, right_tree_depth) > 1 {
+                let right_left_child_depth = match unwrap_to_node(self.nodes[index].right, &self) {
+                    Some(right) => match right.left {
+                        Some(left) => tree_depth_from_node(left, &self, 0),
+                        None => 0
+                    },
+                    None => 0
+                };
+                let right_right_child_depth = match unwrap_to_node(self.nodes[index].right, &self) {
+                    Some(right) => match right.right {
+                        Some(right) => tree_depth_from_node(right, &self, 0),
+                        None => 0
+                    },
+                    None => 0
+                };
+
+                if right_tree_depth > left_tree_depth {
+                    /* Where the left child has a height two less than the right child
+                     * and the right child of right has a height one more than the
+                     * left child of r */
+                    if right_right_child_depth - right_left_child_depth > 0 {
+                        /* The current node becomes the left subchild. Assert that we
+                         * have a right subchild here since the right tree is longer. Then
+                         * the current right child becomes the new local root and the left
+                         * subchild of the right child becomes the new right subchild of
+                         * the left child */
+                        let new_left_child = index;
+                        let new_local_root = self.nodes[index].right.unwrap();
+                        let new_left_right_child = unwrap_to_node(self.nodes[index].right, &self).unwrap().left;
+
+                        /* Update the parent's child reference now */
+                        if let Some(parent_index) = self.nodes[index].parent {
+                            self.nodes[new_local_root].parent = Some(parent_index);
+                            let parent_node = &mut self.nodes[parent_index];
+                            match parent_node.left {
+                                Some(left) => {
+                                    if left == index {
+                                        parent_node.left = Some(new_local_root);
+                                    }
+                                },
+                                None => {}
+                            }
+                            match parent_node.right {
+                                Some(right) => {
+                                    if right == index {
+                                        parent_node.right = Some(new_local_root);
+                                    }
+                                },
+                                None => {}
+                            }
+                        } else {
+                            self.nodes[new_local_root].parent = None;
+                        }
+
+                        /* Now, the new_local_root node must have new_left_child as its left child */
+                        self.nodes[new_local_root].left = Some(new_left_child);
+                        self.nodes[new_left_child].right = new_left_right_child;
+                        self.nodes[new_left_child].parent = Some(new_local_root);
+
+                        if let Some(new_left_right_child_index) = new_left_right_child {
+                            self.nodes[new_left_right_child_index].parent = Some(new_left_child);
+                        }
+
+                        /* Update root if required */
+                        if let Some(root_index) = self.root {
+                            if root_index == index {
+                                self.root = Some(new_local_root);
+                            }
+                        }
+
+                        index = new_local_root;
+                    } else if right_left_child_depth - right_right_child_depth > 0 {
+                        /* Where the left child has height two less than right child
+                         * and left child of right has a height one more than the right child
+                         * of right. */
+                        println!("Would perform right-left rotation on tree");
+                    }
+                }
+            }
+        }
+
+        return index;
     }
 }
 
@@ -128,6 +243,9 @@ fn main() {
     arena.add(0);
     arena.add(2);
     arena.add(3);
+    arena.add(4);
+    arena.add(5);
+    arena.add(6);
 
     println!("Tree is {:?}", arena);
 }
