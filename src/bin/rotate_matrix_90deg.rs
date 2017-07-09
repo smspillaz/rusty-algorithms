@@ -1,9 +1,6 @@
-fn rot_90deg(input: &Vec<Vec<i32>>) -> Vec<Vec<i32>> {
-    let len = input.len();
+fn rot_90deg(mut matrix: &mut Vec<Vec<i32>>) -> &Vec<Vec<i32>> {
+    let len = matrix.len();
     let edge = len - 1;
-    let mut output: Vec<Vec<i32>> = input.iter().map(|_| {
-        input.iter().map(|_| { 0 }).collect()
-    }).collect();
 
     /* Work inwards */
     for k in 0..len / 2 {
@@ -13,30 +10,52 @@ fn rot_90deg(input: &Vec<Vec<i32>>) -> Vec<Vec<i32>> {
         let left_col: usize = k;
 
         /* Do rotations */
-        for x in 0..len {
-            output[right_col][x] = input[x][top_row];
-            output[x][bottom_row] = input[right_col][edge - x];
-            output[left_col][x] = input[x][bottom_row];
-            output[x][top_row] = input[left_col][edge - x];
+        for x in 0..(len - (k * 2 + 1)) {
+            let src = vec![
+                matrix[top_row][x + k],
+                matrix[x + k][right_col],
+                matrix[bottom_row][edge - (x + k)],
+                matrix[edge - (x + k)][left_col]
+            ];
+
+            matrix[x + k][right_col] = src[0];
+            matrix[bottom_row][edge - (x + k)] = src[1];
+            matrix[edge - (x + k)][left_col] = src[2];
+            matrix[top_row][x + k] = src[3];
         }
     }
 
-    /* Odd sized matrix - copy median element across */
-    if len % 2 == 1 {
-        let center = len / 2;
-        output[center][center] = input[center][center];
-    }
-
-    return output;
+    return matrix;
 }
 
 fn main() {
-    let mat = vec![
-        vec![0, 0, 1],
-        vec![0, 0, 0],
-        vec![1, 0, 0]
+    let mut mat = vec![
+        vec![1, 2, 3],
+        vec![4, 5, 6],
+        vec![7, 8, 9]
     ];
 
     println!("{:?}", mat);
-    println!("{:?}", rot_90deg(&mat));
+    println!("{:?}", rot_90deg(&mut mat));
+
+    let mut mat44 = vec![
+        vec![1, 2, 3, 4],
+        vec![5, 6, 7, 8],
+        vec![9, 10, 11, 12],
+        vec![13, 14, 15, 16]
+    ];
+
+    println!("{:?}", mat44);
+    println!("{:?}", rot_90deg(&mut mat44));
+
+    let mut mat55 = vec![
+        vec![1, 2, 3, 4, 5],
+        vec![6, 7, 8, 9, 10],
+        vec![11, 12, 13, 14, 15],
+        vec![16, 17, 18, 19, 20],
+        vec![21, 22, 23, 24, 25]
+    ];
+
+    println!("{:?}", mat55);
+    println!("{:?}", rot_90deg(&mut mat55));
 }
