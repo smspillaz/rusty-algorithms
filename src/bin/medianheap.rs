@@ -103,6 +103,6 @@ fn main() {
 
     for number in numbers {
         medianheap.add(number);
-        println!("{:?} {:?} {:?} {:?}", number, medianheap.get_median());
+        println!("{:?} {:?}", number, medianheap.get_median());
     }
 }
