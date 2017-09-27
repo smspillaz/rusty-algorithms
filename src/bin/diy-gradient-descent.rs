@@ -61,10 +61,9 @@ fn update(w: &Vec<f64>, t: &Vec<Vec<f64>>, lr: f64) -> Vec<f64> {
 
   return w.iter().enumerate().map(|(i, prev)| {
     return prev + lr * (1.0 / (training_coefficients.len() as f64)) * (training_coefficients.iter().enumerate().fold(0.0, |acc, (k, v)| {
-      let p1 = t[k][cardinality] - (v.iter().enumerate().fold(0.0, (|acc, (j, vj)| {
+      return acc + t[k][cardinality] - (v.iter().enumerate().fold(0.0, (|acc, (j, vj)| {
         return acc + (w[j] * vj);
-      })));
-      return acc + p1 * training_partial_derivs[i][k];
+      }))) * training_partial_derivs[i][k];
     }));
   }).collect::<Vec<_>>().to_vec();
 }
