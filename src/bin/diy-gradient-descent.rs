@@ -1,3 +1,4 @@
+/* Compute the loss over a single row */
 fn loss_one(w: &Vec<f64>, t: &Vec<f64>) -> f64 {
   let len = t.len();
   let last = t[len - 1];
@@ -12,6 +13,8 @@ fn loss_one(w: &Vec<f64>, t: &Vec<f64>) -> f64 {
   return error * error;
 }
 
+/* Compute the loss over all rows in the training data (so
+ * the sum of the squared errors) */
 fn loss(w: &Vec<f64>, t: &Vec<Vec<f64>>) -> f64 {
   return t.iter().fold(0.0, |acc, tj| acc + loss_one(w, &tj)) / (t.len() as f64);
 }
@@ -66,6 +69,9 @@ fn update(w: &Vec<f64>, t: &Vec<Vec<f64>>, lr: f64) -> Vec<f64> {
   }).collect::<Vec<_>>().to_vec();
 }
 
+/* Loop through the training data and compute the maximum value for each column,
+ * this will be used as the "normalisation factor" below, such that all training
+ * data is expressed in unit-scale */
 fn normalization_factors(t: &Vec<Vec<f64>>) -> Vec<f64> {
   return (0..t[0].len()).map(|i| {
     return t.iter().fold(0.0, |acc, v| {
@@ -78,12 +84,17 @@ fn normalization_factors(t: &Vec<Vec<f64>>) -> Vec<f64> {
   }).collect::<Vec<_>>().to_vec();
 }
 
+/* Using the computed maximum values above, compute normalized training
+ * data by applying the normalization operator over each column */
 fn normalize_columns(t: Vec<Vec<f64>>, maximums: &Vec<f64>) -> Vec<Vec<f64>> {
   return t.iter().map(|v| {
     v.iter().enumerate().map(|(j, x)| x / maximums[j]).collect::<Vec<_>>().to_vec()
   }).collect::<Vec<_>>().to_vec();
 }
 
+/* In order to simplify the weight update operations, prepend a single
+ * training data column to all training data with the constant value of '1.0' -
+ * this will take the value of x_0 such that we can multiply it with w_0 */
 fn prepend_first_coefficient(t: Vec<Vec<f64>>) -> Vec<Vec<f64>> {
   return t.iter().map(|v| {
     println!("{:?}", vec![1.0].iter().chain(v.iter()).cloned().collect::<Vec<_>>().to_vec());
@@ -91,6 +102,7 @@ fn prepend_first_coefficient(t: Vec<Vec<f64>>) -> Vec<Vec<f64>> {
   }).collect::<Vec<_>>().to_vec();
 }
 
+/* Using the weights, try and predict values from the test set */
 fn predict(w: &Vec<f64>, t: &Vec<f64>) -> f64 {
   println!("{:?} {:?}", w, t);
   return w.iter().enumerate().fold(0.0, |acc, (i, w)| acc + w * t[i]);
