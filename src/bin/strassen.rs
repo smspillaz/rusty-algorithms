@@ -40,6 +40,44 @@ fn naive_sized_accumulate(a: &Vec<Vec<f32>>,
   ops
 }
 
+fn naive_sized_subtract(a: &Vec<Vec<f32>>,
+                        a_col_start: usize,
+                        a_col_end: usize,
+                        a_row_start: usize,
+                        a_row_end: usize,
+                        b: &Vec<Vec<f32>>,
+                        b_col_start: usize,
+                        b_col_end: usize,
+                        b_row_start: usize,
+                        b_row_end: usize,
+                        result: &mut Vec<Vec<f32>>) -> u32 {
+  let a_m = a_row_end - a_row_start;
+  let a_n = a_col_end - a_col_start;
+  let b_m = b_row_end - b_row_start;
+  let b_n = b_col_end - b_col_start;
+
+  /* Columns in a vs rows in b */
+  if a_n != b_m {
+    panic!("Incompatible sizes");
+  }
+
+  let n = a_m;
+  let m = a_n;
+  let p = b_n;
+  let mut ops = 0;
+
+  for i in 0..m {
+    for j in 0..p {
+      for k in 0..n {
+        ops += 1;
+        result[j + a_col_start][i + a_row_start] -= a[a_col_start + k][a_row_start + j] * b[b_col_start + i][b_row_start + k];
+      }
+    }
+  }
+
+  ops
+}
+
 fn naive(a: Vec<Vec<f32>>, b: Vec<Vec<f32>>) -> (u32, Vec<Vec<f32>>) {
   /* Compatibility check */
   if a.len() != b[0].len() {
@@ -81,6 +119,27 @@ fn naive_sized_accumulate_quadrant(a: &Vec<Vec<f32>>,
                          half_n * b_row,
                          half_n * (b_row + 1),
                          &mut result)
+}
+
+fn naive_sized_subtract_quadrant(a: &Vec<Vec<f32>>,
+                                 a_col: usize,
+                                 a_row: usize,
+                                 b: &Vec<Vec<f32>>,
+                                 b_col: usize,
+                                 b_row: usize,
+                                 mut result: &mut Vec<Vec<f32>>,
+                                 half_n: usize) -> u32 {
+  naive_sized_subtract(&a,
+                       half_n * a_col,
+                       half_n * (a_col + 1),
+                       half_n * a_row,
+                       half_n * (a_row + 1),
+                       &b,
+                       half_n * b_col,
+                       half_n * (b_col + 1),
+                       half_n * b_row,
+                       half_n * (b_row + 1),
+                       &mut result)
 }
 
 fn nearestpow2(a: u32) -> u32 {
