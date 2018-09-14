@@ -62,6 +62,106 @@ fn naive(a: Vec<Vec<f32>>, b: Vec<Vec<f32>>) -> (u32, Vec<Vec<f32>>) {
   return (ops, result)
 }
 
+fn naive_sized_accumulate_quadrant(a: &Vec<Vec<f32>>,
+                                   a_col: usize,
+                                   a_row: usize,
+                                   b: &Vec<Vec<f32>>,
+                                   b_col: usize,
+                                   b_row: usize,
+                                   mut result: &mut Vec<Vec<f32>>,
+                                   half_n: usize) -> u32 {
+  naive_sized_accumulate(&a,
+                         half_n * a_col,
+                         half_n * (a_col + 1),
+                         half_n * a_row,
+                         half_n * (a_row + 1),
+                         &b,
+                         half_n * b_col,
+                         half_n * (b_col + 1),
+                         half_n * b_row,
+                         half_n * (b_row + 1),
+                         &mut result)
+}
+
+fn nearestpow2(a: u32) -> u32 {
+  let mut n = a - 1;
+
+  n = n | (n >> 1);
+  n = n | (n >> 2);
+  n = n | (n >> 4);
+  n = n | (n >> 8);
+  n = n | (n >> 16);
+
+  return n + 1;
+}
+
+fn copy_into_square(vec: Vec<Vec<f32>>, size: usize) -> Vec<Vec<f32>> {
+  let mut result = vec![vec![0f32; size]; size];
+
+  for i in 0..vec.len() {
+    for j in 0..vec[0].len() {
+      result[i][j] = vec[i][j];
+    }
+  }
+
+  result
+}
+
+fn divideconquer(a_orig: Vec<Vec<f32>>, b_orig: Vec<Vec<f32>>) -> (u32, Vec<Vec<f32>>) {
+  /* Compatibility check */
+  if a_orig[0].len() != a_orig.len() || b_orig[0].len() != b_orig.len() {
+    panic!("Matrices must be square");
+  }
+
+  let n = nearestpow2 (a_orig.len() as u32) as usize;
+  let half_n = n / 2;
+
+  let mut result = vec![vec![0f32; n]; n];
+  let a = copy_into_square(a_orig, n);
+  let b = copy_into_square(b_orig, n);
+
+  let mut ops = 0;
+
+  /*
+   * [a[0][0] * b[0][0] + a[1][0] * b[0][1], a[0][0] * b[0][1] + a[1][0] * b[1][1],
+   *  a[0][1] * b[0][0] + a[1][1] * b[0][1], a[0][1] * b[1][0] + a[1][1] * b[1][1]]
+   */
+
+  /* Quadrant 1 */
+  ops += naive_sized_accumulate_quadrant(&a, 0, 0,
+                                         &b, 0, 0,
+                                         &mut result, half_n);
+  ops += naive_sized_accumulate_quadrant(&a, 1, 0,
+                                         &b, 0, 1,
+                                         &mut result, half_n);
+
+  /* Quadrant 2 */
+  ops += naive_sized_accumulate_quadrant(&a, 0, 0,
+                                         &b, 0, 1,
+                                         &mut result, half_n);
+  ops += naive_sized_accumulate_quadrant(&a, 1, 0,
+                                         &b, 1, 1,
+                                         &mut result, half_n);
+
+  /* Quadrant 3 */
+  ops += naive_sized_accumulate_quadrant(&a, 0, 1,
+                                         &b, 0, 0,
+                                         &mut result, half_n);
+  ops += naive_sized_accumulate_quadrant(&a, 1, 1,
+                                         &b, 0, 1,
+                                         &mut result, half_n);
+
+  /* Quadrant 4 */
+  ops += naive_sized_accumulate_quadrant(&a, 0, 1,
+                                         &b, 1, 0,
+                                         &mut result, half_n);
+  ops += naive_sized_accumulate_quadrant(&a, 1, 1,
+                                         &b, 1, 1,
+                                         &mut result, half_n);
+
+  (ops, result)
+}
+
 fn main() {
   println!("naive: {:?}", naive(vec![vec![1f32, 0f32],
                                       vec![0f32, 1f32]],
@@ -77,4 +177,11 @@ fn main() {
                                 vec![vec![1f32, 0f32, 0f32],
                                       vec![0f32, 1f32, 0f32],
                                       vec![0f32, 0f32, 1f32]]));
+
+  println!("divideconquer: {:?}", divideconquer(vec![vec![1f32, 0f32, 0f32],
+                                                     vec![0f32, 3f32, 0f32],
+                                                     vec![0f32, 0f32, 1f32]],
+                                                vec![vec![1f32, 0f32, 0f32],
+                                                     vec![0f32, 1f32, 0f32],
+                                                     vec![0f32, 0f32, 1f32]]));
 }
