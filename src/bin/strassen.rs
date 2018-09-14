@@ -221,6 +221,43 @@ fn divideconquer(a_orig: Vec<Vec<f32>>, b_orig: Vec<Vec<f32>>) -> (u32, Vec<Vec<
   (ops, result)
 }
 
+fn strassen(a_orig: Vec<Vec<f32>>, b_orig: Vec<Vec<f32>>) -> (u32, Vec<Vec<f32>>) {
+  /* Compatibility check */
+  if a_orig[0].len() != a_orig.len() || b_orig[0].len() != b_orig.len() {
+    panic!("Matrices must be square");
+  }
+
+  let n = nearestpow2 (a_orig.len() as u32) as usize;
+  let half_n = n / 2;
+
+  let mut result = vec![vec![0f32; n]; n];
+  let a = copy_into_square(a_orig, n);
+  let b = copy_into_square(b_orig, n);
+
+  let mut ops = 0;
+
+  /*
+   * [p5 + p4 - p2 + p6, p1 + p2,
+   *  p3 + p4, p1 + p5 - p3 - p7]
+   *
+   * [a b      [e f
+   *  c d]  x   g h]
+   *
+   * p1 = a(f - h) = af - ah
+   * p2 = (a + b)h = ah + bh
+   * p3 = (c + d)e = ce + de
+   * p4 = d(g - e) = dg - de
+   * p5 = (a + d)(e + h) = ae + ah + de + dh
+   * p6 = (b - d)(g + h) = bg + bh - dg - dh
+   * p7 = (a - c)(e + f) = ae + af - ce - cf
+   *
+   * [ae + ah + de + dh + dg - de - ah - bh + bg + bh - dg - dh, af - ah + ah + bh,
+   *  ce + de + dg - de, af - ah + ae + ah + de + dh - ce - de - ae - af + ce + cf]
+   */
+
+   result;
+}
+
 fn main() {
   println!("naive: {:?}", naive(vec![vec![1f32, 0f32],
                                       vec![0f32, 1f32]],
